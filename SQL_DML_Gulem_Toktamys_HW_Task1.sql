@@ -131,19 +131,22 @@ RETURNING *;
 
 --6
 WITH me AS (
-    SELECT customer_id FROM public.customer
-    WHERE LOWER(first_name)='gulem' AND LOWER(last_name)='toktamys'
+    SELECT customer_id
+    FROM public.customer
+    WHERE LOWER(first_name) = 'gulem'
+      AND LOWER(last_name) = 'toktamys'
+),
+del_payment AS (
+    DELETE FROM public.payment p
+    USING me
+    WHERE p.customer_id = me.customer_id
 )
-DELETE FROM public.payment   
-WHERE customer_id 
-IN (SELECT customer_id FROM me);
+DELETE FROM public.rental r
+USING me
+WHERE r.customer_id = me.customer_id;
 
-DELETE FROM public.rental    
-WHERE customer_id 
-IN (SELECT customer_id FROM me);
 
 --Clean old records to prevent conflicts when adding new rentals or payments.
-
 
 --7
 WITH my_cust AS ( 
