@@ -1,3 +1,7 @@
+-- Create the database
+CREATE DATABASE IF NOT EXISTS campaign_db
+--\c campaign_db
+
 -- Create the schema
 CREATE SCHEMA IF NOT EXISTS campaign;
 
@@ -125,112 +129,169 @@ CREATE TABLE IF NOT EXISTS campaign.finance (
 
 
 --Insert Data
-INSERT INTO campaign.party (partyname) VALUES
-  ('People''s Choice'),
-  ('United Future')
-ON CONFLICT (partyname) DO NOTHING;
+INSERT INTO campaign.party (partyname)
+SELECT 'People''s Choice'
+WHERE NOT EXISTS (SELECT 1 FROM campaign.party WHERE LOWER(partyname)=LOWER('People''s Choice'));
 
-INSERT INTO campaign.candidate (fullname, partyid, position, campaignstartdate) VALUES
-  ('Aliyev Askar', (SELECT partyid FROM campaign.party WHERE partyname = 'People''s Choice'), 'President', DATE '2025-03-01'),
-  ('Nurgali Dina', (SELECT partyid FROM campaign.party WHERE partyname = 'United Future'), 'Mayor', DATE '2025-02-15')
-ON CONFLICT (fullname) DO NOTHING;
+INSERT INTO campaign.party (partyname)
+SELECT 'United Future'
+WHERE NOT EXISTS (SELECT 1 FROM campaign.party WHERE LOWER(partyname)=LOWER('United Future'));
 
-INSERT INTO campaign.voter (firstname, lastname, dateofbirth, gender, email, phone, district, state, locality, street, building) VALUES
-  ('Aida', 'Serikova', DATE '1998-03-15', 'F', 'aida.s@mail.kz', '+77011234567', 'Almaty District 3', 'Almaty Region', 'Almaty', 'Abai Avenue', '5A'),
-  ('Bulat', 'Karimov', DATE '1979-11-02', 'M', 'bulat.k@mail.kz', '+77017654321', 'Astana District 1', 'Astana Region', 'Astana', 'Republic Ave', '12')
-ON CONFLICT (email) DO NOTHING;
+INSERT INTO campaign.candidate (fullname, partyid, position, campaignstartdate)
+SELECT 'Aliyev Askar', partyid, 'President', DATE '2025-03-01'
+FROM campaign.party
+WHERE LOWER(partyname)=LOWER('People''s Choice')
+  AND NOT EXISTS (SELECT 1 FROM campaign.candidate WHERE LOWER(fullname)=LOWER('Aliyev Askar'));
 
-INSERT INTO campaign.donor (donorname, contactnumber, email, address) VALUES
-  ('NurCorp Ltd.', '+77055667788', 'contact@nurcorp.kz', 'Astana, 12 Republic Ave'),
-  ('Individual Donor 1', '+77010020030', 'donor1@example.com', 'Almaty, 5 Abai Ave')
-ON CONFLICT (donorname) DO NOTHING;
+INSERT INTO campaign.candidate (fullname, partyid, position, campaignstartdate)
+SELECT 'Nurgali Dina', partyid, 'Mayor', DATE '2025-02-15'
+FROM campaign.party
+WHERE LOWER(partyname)=LOWER('United Future')
+  AND NOT EXISTS (SELECT 1 FROM campaign.candidate WHERE LOWER(fullname)=LOWER('Nurgali Dina'));
 
-INSERT INTO campaign.campaignevent (candidateid, eventname, eventtype, eventdate, location) VALUES
-  (
-    (SELECT candidateid FROM campaign.candidate WHERE fullname='Aliyev Askar'),
-    'Central Rally',
-    'Rally',
-    DATE '2025-05-12',
-    'Astana Square'
-  ),
-  (
-    (SELECT candidateid FROM campaign.candidate WHERE fullname='Nurgali Dina'),
-    'Town Hall Meeting',
-    'TownHall',
-    DATE '2025-04-20',
-    'City Hall'
-  )
-ON CONFLICT (eventid) DO NOTHING;
+INSERT INTO campaign.voter (firstname, lastname, dateofbirth, gender, email, phone, district, state, locality, street, building)
+SELECT 'Aida', 'Serikova', DATE '1998-03-15', 'F', 'aida.s@mail.kz', '+77011234567', 'Almaty District 3', 'Almaty Region', 'Almaty', 'Abai Avenue', '5A'
+WHERE NOT EXISTS (SELECT 1 FROM campaign.voter WHERE LOWER(email)=LOWER('aida.s@mail.kz'));
 
-INSERT INTO campaign.volunteer (fullname, contactnumber, email, availability, supervisorid, role) VALUES
-  ('Dina Tulegenova', '+77033445566', 'dina.t@mail.kz', 'Full-Time', NULL, 'Assistant'),
-  ('Erik Samat', '+77030040050', 'erik.s@mail.kz', 'Part-Time', NULL, 'Stage Crew')
-ON CONFLICT (email) DO NOTHING;
+INSERT INTO campaign.voter (firstname, lastname, dateofbirth, gender, email, phone, district, state, locality, street, building)
+SELECT 'Bulat', 'Karimov', DATE '1979-11-02', 'M', 'bulat.k@mail.kz', '+77017654321', 'Astana District 1', 'Astana Region', 'Astana', 'Republic Ave', '12'
+WHERE NOT EXISTS (SELECT 1 FROM campaign.voter WHERE LOWER(email)=LOWER('bulat.k@mail.kz'));
+
+INSERT INTO campaign.donor (donorname, contactnumber, email, address)
+SELECT 'NurCorp Ltd.', '+77055667788', 'contact@nurcorp.kz', 'Astana, 12 Republic Ave'
+WHERE NOT EXISTS (SELECT 1 FROM campaign.donor WHERE LOWER(donorname)=LOWER('NurCorp Ltd.'));
+
+INSERT INTO campaign.donor (donorname, contactnumber, email, address)
+SELECT 'Individual Donor 1', '+77010020030', 'donor1@example.com', 'Almaty, 5 Abai Ave'
+WHERE NOT EXISTS (SELECT 1 FROM campaign.donor WHERE LOWER(donorname)=LOWER('Individual Donor 1'));
+
+INSERT INTO campaign.campaignevent (candidateid, eventname, eventtype, eventdate, location)
+SELECT c.candidateid, 'Central Rally', 'Rally', DATE '2025-05-12', 'Astana Square'
+FROM campaign.candidate c
+WHERE LOWER(fullname)=LOWER('Aliyev Askar')
+  AND NOT EXISTS (SELECT 1 FROM campaign.campaignevent WHERE candidateid=c.candidateid AND LOWER(eventname)=LOWER('Central Rally'));
+
+INSERT INTO campaign.campaignevent (candidateid, eventname, eventtype, eventdate, location)
+SELECT c.candidateid, 'Town Hall Meeting', 'TownHall', DATE '2025-04-20', 'City Hall'
+FROM campaign.candidate c
+WHERE LOWER(fullname)=LOWER('Nurgali Dina')
+  AND NOT EXISTS (SELECT 1 FROM campaign.campaignevent WHERE candidateid=c.candidateid AND LOWER(eventname)=LOWER('Town Hall Meeting'));
+
+INSERT INTO campaign.volunteer (fullname, contactnumber, email, availability, supervisorid, role)
+SELECT 'Dina Tulegenova', '+77033445566', 'dina.t@mail.kz', 'Full-Time', NULL, 'Assistant'
+WHERE NOT EXISTS (SELECT 1 FROM campaign.volunteer WHERE LOWER(email)=LOWER('dina.t@mail.kz'));
+
+INSERT INTO campaign.volunteer (fullname, contactnumber, email, availability, supervisorid, role)
+SELECT 'Erik Samat', '+77030040050', 'erik.s@mail.kz', 'Part-Time', NULL, 'Stage Crew'
+WHERE NOT EXISTS (SELECT 1 FROM campaign.volunteer WHERE LOWER(email)=LOWER('erik.s@mail.kz'));
 
 --creates the supervisor relationship after inserting the volunteers 
 UPDATE campaign.volunteer
-SET supervisorid = (SELECT volunteerid FROM campaign.volunteer WHERE fullname='Dina Tulegenova')
-WHERE fullname = 'Erik Samat' AND supervisorid IS DISTINCT FROM (SELECT volunteerid FROM campaign.volunteer WHERE fullname='Dina Tulegenova');
+SET supervisorid = (SELECT volunteerid FROM campaign.volunteer WHERE LOWER(fullname)=LOWER('Dina Tulegenova'))
+WHERE LOWER(fullname)=LOWER('Erik Samat')
+  AND supervisorid IS DISTINCT FROM (SELECT volunteerid FROM campaign.volunteer WHERE LOWER(fullname)=LOWER('Dina Tulegenova'));
 
-INSERT INTO campaign.volunteereventassignment (volunteerid, eventid, task, assigneddate) VALUES
-  (
-    (SELECT volunteerid FROM campaign.volunteer WHERE email='dina.t@mail.kz'),
-    (SELECT eventid FROM campaign.campaignevent WHERE eventname='Central Rally'),
-    'Stage Setup',
-    DATE '2025-05-10'
-  ),
-  (
-    (SELECT volunteerid FROM campaign.volunteer WHERE email='erik.s@mail.kz'),
-    (SELECT eventid FROM campaign.campaignevent WHERE eventname='Central Rally'),
-    'Sound Check',
-    CURRENT_DATE
-  )
-ON CONFLICT (volunteerid, eventid) DO NOTHING;
+INSERT INTO campaign.volunteereventassignment (volunteerid, eventid, task, assigneddate)
+SELECT v.volunteerid, e.eventid, 'Stage Setup', DATE '2025-05-10'
+FROM campaign.volunteer v
+JOIN campaign.campaignevent e ON LOWER(v.fullname)=LOWER('Dina Tulegenova') AND LOWER(e.eventname)=LOWER('Central Rally')
+WHERE NOT EXISTS (
+    SELECT 1 FROM campaign.volunteereventassignment ve
+    WHERE ve.volunteerid=v.volunteerid AND ve.eventid=e.eventid
+);
 
-INSERT INTO campaign.donation (donorid, candidateid, amount, donationdate, paymentmethod) VALUES
-  (
-    (SELECT donorid FROM campaign.donor WHERE donorname='NurCorp Ltd.'),
-    (SELECT candidateid FROM campaign.candidate WHERE fullname='Aliyev Askar'),
-    5000.00,
-    DATE '2025-04-15',
-    'Online'
-  ),
-  (
-    (SELECT donorid FROM campaign.donor WHERE donorname='Individual Donor 1'),
-    (SELECT candidateid FROM campaign.candidate WHERE fullname='Nurgali Dina'),
-    250.00,
-    DATE '2025-03-20',
-    'Card'
-  )
-ON CONFLICT (donationid) DO NOTHING;
+INSERT INTO campaign.volunteereventassignment (volunteerid, eventid, task, assigneddate)
+SELECT v.volunteerid, e.eventid, 'Sound Check', CURRENT_DATE
+FROM campaign.volunteer v
+JOIN campaign.campaignevent e ON LOWER(v.fullname)=LOWER('Erik Samat') AND LOWER(e.eventname)=LOWER('Central Rally')
+WHERE NOT EXISTS (
+    SELECT 1 FROM campaign.volunteereventassignment ve
+    WHERE ve.volunteerid=v.volunteerid AND ve.eventid=e.eventid
+);
 
-INSERT INTO campaign.survey (title, candidateid, conducteddate, samplesize) VALUES
-  ('Public Approval 2025', (SELECT candidateid FROM campaign.candidate WHERE fullname='Aliyev Askar'), DATE '2025-06-01', 1200),
-  ('City Concerns Poll', (SELECT candidateid FROM campaign.candidate WHERE fullname='Nurgali Dina'), DATE '2025-05-10', 500)
-ON CONFLICT (surveyid) DO NOTHING;
+INSERT INTO campaign.donation (donorid, candidateid, amount, donationdate, paymentmethod)
+SELECT d.donorid, c.candidateid, 5000.00, DATE '2025-04-15', 'Online'
+FROM campaign.donor d
+JOIN campaign.candidate c ON LOWER(d.donorname)=LOWER('NurCorp Ltd.') AND LOWER(c.fullname)=LOWER('Aliyev Askar')
+WHERE NOT EXISTS (
+    SELECT 1 FROM campaign.donation x
+    WHERE x.donorid=d.donorid AND x.candidateid=c.candidateid AND x.donationdate=DATE '2025-04-15'
+);
 
-INSERT INTO campaign.surveyresult (surveyid, question, optiona, optionb, optionc, optiond, winningoption) VALUES
-  (
-    (SELECT surveyid FROM campaign.survey WHERE title='Public Approval 2025'),
-    'Do you support Candidate Aliyev?',
-    'Yes', 'No', 'Neutral', 'No Answer', 'A'
-  ),
-  (
-    (SELECT surveyid FROM campaign.survey WHERE title='City Concerns Poll'),
-    'Is public transport satisfactory?',
-    'Yes', 'No', 'Somewhat', 'No answer', 'B'
-  )
-ON CONFLICT (resultid) DO NOTHING;
+INSERT INTO campaign.donation (donorid, candidateid, amount, donationdate, paymentmethod)
+SELECT d.donorid, c.candidateid, 250.00, DATE '2025-03-20', 'Card'
+FROM campaign.donor d
+JOIN campaign.candidate c ON LOWER(d.donorname)=LOWER('Individual Donor 1') AND LOWER(c.fullname)=LOWER('Nurgali Dina')
+WHERE NOT EXISTS (
+    SELECT 1 FROM campaign.donation x
+    WHERE x.donorid=d.donorid AND x.candidateid=c.candidateid AND x.donationdate=DATE '2025-03-20'
+);
 
-INSERT INTO campaign.electionissue (description, reportedby, datereported, severity, relatedeventid) VALUES
-  ('Missing chairs at Town Hall', 'Bulat Karim', DATE '2025-05-20', 'Low', (SELECT eventid FROM campaign.campaignevent WHERE eventname='Town Hall Meeting')),
-  ('Protest near rally entrance', 'Local Police', DATE '2025-05-12', 'Medium', (SELECT eventid FROM campaign.campaignevent WHERE eventname='Central Rally'))
-ON CONFLICT (issueid) DO NOTHING;
+INSERT INTO campaign.survey (title, candidateid, conducteddate, samplesize)
+SELECT 'Public Approval 2025', c.candidateid, DATE '2025-06-01', 1200
+FROM campaign.candidate c
+WHERE LOWER(c.fullname)=LOWER('Aliyev Askar')
+  AND NOT EXISTS (
+    SELECT 1 FROM campaign.survey s
+    WHERE LOWER(s.title)=LOWER('Public Approval 2025') AND s.candidateid=c.candidateid
+);
 
-INSERT INTO campaign.finance (candidateid, totalraised, totalspent, lastupdated) VALUES
-  ((SELECT candidateid FROM campaign.candidate WHERE fullname='Aliyev Askar'), 125000.00, 87000.00, CURRENT_DATE),
-  ((SELECT candidateid FROM campaign.candidate WHERE fullname='Nurgali Dina'), 35000.00, 15000.00, CURRENT_DATE)
-ON CONFLICT (candidateid) DO NOTHING;
+INSERT INTO campaign.survey (title, candidateid, conducteddate, samplesize)
+SELECT 'City Concerns Poll', c.candidateid, DATE '2025-05-10', 500
+FROM campaign.candidate c
+WHERE LOWER(c.fullname)=LOWER('Nurgali Dina')
+  AND NOT EXISTS (
+    SELECT 1 FROM campaign.survey s
+    WHERE LOWER(s.title)=LOWER('City Concerns Poll') AND s.candidateid=c.candidateid
+);
+
+INSERT INTO campaign.surveyresult (surveyid, question, optiona, optionb, optionc, optiond, winningoption)
+SELECT s.surveyid, 'Do you support Candidate Aliyev?', 'Yes', 'No', 'Neutral', 'No Answer', 'A'
+FROM campaign.survey s
+WHERE LOWER(s.title)=LOWER('Public Approval 2025')
+  AND NOT EXISTS (
+    SELECT 1 FROM campaign.surveyresult r
+    WHERE r.surveyid=s.surveyid AND LOWER(r.question)=LOWER('Do you support Candidate Aliyev?')
+);
+
+INSERT INTO campaign.surveyresult (surveyid, question, optiona, optionb, optionc, optiond, winningoption)
+SELECT s.surveyid, 'Is public transport satisfactory?', 'Yes', 'No', 'Somewhat', 'No answer', 'B'
+FROM campaign.survey s
+WHERE LOWER(s.title)=LOWER('City Concerns Poll')
+  AND NOT EXISTS (
+    SELECT 1 FROM campaign.surveyresult r
+    WHERE r.surveyid=s.surveyid AND LOWER(r.question)=LOWER('Is public transport satisfactory?')
+);
+
+INSERT INTO campaign.electionissue (description, reportedby, datereported, severity, relatedeventid)
+SELECT 'Missing chairs at Town Hall', 'Bulat Karim', DATE '2025-05-20', 'Low', e.eventid
+FROM campaign.campaignevent e
+WHERE LOWER(e.eventname)=LOWER('Town Hall Meeting')
+  AND NOT EXISTS (
+    SELECT 1 FROM campaign.electionissue i
+    WHERE LOWER(i.description)=LOWER('Missing chairs at Town Hall') AND i.relatedeventid=e.eventid
+);
+
+INSERT INTO campaign.electionissue (description, reportedby, datereported, severity, relatedeventid)
+SELECT 'Protest near rally entrance', 'Local Police', DATE '2025-05-12', 'Medium', e.eventid
+FROM campaign.campaignevent e
+WHERE LOWER(e.eventname)=LOWER('Central Rally')
+  AND NOT EXISTS (
+    SELECT 1 FROM campaign.electionissue i
+    WHERE LOWER(i.description)=LOWER('Protest near rally entrance') AND i.relatedeventid=e.eventid
+);
+
+INSERT INTO campaign.finance (candidateid, totalraised, totalspent, lastupdated)
+SELECT c.candidateid, 125000.00, 87000.00, CURRENT_DATE
+FROM campaign.candidate c
+WHERE LOWER(c.fullname)=LOWER('Aliyev Askar')
+  AND NOT EXISTS (SELECT 1 FROM campaign.finance f WHERE f.candidateid=c.candidateid);
+
+INSERT INTO campaign.finance (candidateid, totalraised, totalspent, lastupdated)
+SELECT c.candidateid, 35000.00, 15000.00, CURRENT_DATE
+FROM campaign.candidate c
+WHERE LOWER(c.fullname)=LOWER('Nurgali Dina')
+  AND NOT EXISTS (SELECT 1 FROM campaign.finance f WHERE f.candidateid=c.candidateid);
 
 --Add new column
 ALTER TABLE campaign.party
