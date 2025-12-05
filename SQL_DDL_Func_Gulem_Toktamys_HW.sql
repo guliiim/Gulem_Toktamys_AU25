@@ -152,11 +152,13 @@ SELECT * FROM most_popular_films_by_countries(NULL);
 --SQL state: P0001
 
 --Task 4. Create procedure language functions
+--DROP FUNCTION IF EXISTS public.films_in_stock_by_title(TEXT);
+
 CREATE OR REPLACE FUNCTION public.films_in_stock_by_title(
     search_title TEXT
 )
 RETURNS TABLE (
-    row_num INTEGER,
+    row_num BIGINT,
     film_title TEXT,
     language TEXT,
     customer_name TEXT,
@@ -174,9 +176,9 @@ BEGIN
         SELECT i.inventory_id, i.film_id
         FROM public.inventory i
         LEFT JOIN public.rental r
-				ON r.inventory_id = i.inventory_id
-				AND r.return_date IS NULL 
-        WHERE r.rental_id IS NULL   
+            ON r.inventory_id = i.inventory_id
+            AND r.return_date IS NULL 
+        WHERE r.rental_id IS NULL
     ),
 
     latest_rentals AS (
@@ -191,18 +193,14 @@ BEGIN
     SELECT
         ROW_NUMBER() OVER (ORDER BY f.title) AS row_num,
         f.title AS film_title,
-        l.name AS language,
+        l.name::TEXT AS language,
         (c.first_name || ' ' || c.last_name) AS customer_name,
-        lr.rental_date
+        lr.rental_date::timestamp
     FROM available_inventory ai
-    INNER JOIN public.film f
-			ON f.film_id = ai.film_id
-    INNER JOIN public.language l
-            ON l.language_id = f.language_id
-    LEFT JOIN latest_rentals lr
-			ON lr.inventory_id = ai.inventory_id
-    LEFT JOIN public.customer c
-			ON c.customer_id = lr.customer_id
+    INNER JOIN public.film f ON f.film_id = ai.film_id
+    INNER JOIN public.language l ON l.language_id = f.language_id
+    LEFT JOIN latest_rentals lr ON lr.inventory_id = ai.inventory_id
+    LEFT JOIN public.customer c ON c.customer_id = lr.customer_id
     WHERE LOWER(f.title) LIKE LOWER(search_title)
     GROUP BY f.title, l.name, c.first_name, c.last_name, lr.rental_date
     ORDER BY f.title;
@@ -213,6 +211,7 @@ BEGIN
 END;
 $$;
 
+--SELECT * FROM public.films_in_stock_by_title('%love%');
 
 --Task 5. Create procedure language functions
 CREATE OR REPLACE FUNCTION public.new_movie(
