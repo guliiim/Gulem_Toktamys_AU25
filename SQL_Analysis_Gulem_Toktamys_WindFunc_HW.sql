@@ -81,7 +81,8 @@ WITH yearly_sales AS (
         t.calendar_year,
         SUM(s.amount_sold) AS total_sales
     FROM sh.sales s
-    INNER JOIN sh.times t ON s.time_id = t.time_id
+    INNER JOIN sh.times t
+		ON s.time_id = t.time_id
     WHERE t.calendar_year IN (1998, 1999, 2001)
     GROUP BY
         s.cust_id,
@@ -103,33 +104,33 @@ qualified_customers AS (
     FROM ranked_customers
 	WHERE sales_rank <= 300
     GROUP BY cust_id
-    HAVING COUNT(DISTINCT calendar_year) >=1
-),
---Sales per channel for qualified customers
-channel_sales AS (
-    SELECT
-        s.channel_id,
-        s.cust_id,
-        SUM(s.amount_sold) AS total_sales
-    FROM sh.sales s
-    INNER JOIN sh.times t ON s.time_id = t.time_id
-    WHERE t.calendar_year IN (1998, 1999, 2001)
-      AND s.cust_id IN (SELECT cust_id FROM qualified_customers)
-    GROUP BY s.channel_id, s.cust_id
+    HAVING COUNT(DISTINCT calendar_year) = 3
 )
 --total sales per channel per customer
 SELECT
-    ch.channel_desc,
-	cs.cust_id,
+    UPPER(ch.channel_desc) AS channel_desc,
+	qc.cust_id,
 	cu.cust_last_name,
 	cu.cust_first_name,
-	ROUND(cs.total_sales,2) AS amount_sold
-FROM channel_sales cs
+	ROUND(SUM(s.amount_sold),2) AS total_sales
+FROM qualified_customers qc
+INNER JOIN sh.sales s
+	ON qc.cust_id = s.cust_id
+INNER JOIN sh.times t
+	ON s.time_id = t.time_id
 INNER JOIN sh.channels ch
-	ON cs.channel_id = ch.channel_id
+	ON s.channel_id = ch.channel_id
 INNER JOIN sh.customers cu
-	ON cs.cust_id = cu.cust_id
-ORDER BY LOWER(ch.channel_desc), amount_sold DESC;
+	ON qc.cust_id = cu.cust_id
+WHERE t.calendar_year IN (1998, 1999, 2001)
+GROUP BY 
+	UPPER(ch.channel_desc),
+	qc.cust_id,
+	cu.cust_last_name,
+	cu.cust_first_name
+ORDER BY 
+	channel_desc,
+	total_sales DESC;
 
 --Task 4 Sales by Month and Product Category in Europe and Americas
 --Aggregate sales per month, product category, and region
