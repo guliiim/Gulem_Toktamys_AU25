@@ -1,0 +1,33 @@
+Sources Description
+
+Project Overview
+
+This project is based on sales and supply chain data of the company DataCo Global. The company operates in provisioning, production, sales, and commercial distribution. The purpose of this project is to design and populate a Data Warehouse using data from two different source systems. These source systems represent different sales channels of the same business and are used to fill 3NF and Star schemas in the Data Warehouse.
+
+To satisfy the project requirements, the original dataset was transformed into two separate CSV files. Each file represents a different source system with its own attributes and business logic.
+
+Source System 1: DataCoSupplyChainDataset_Offline
+
+The first source system represents offline sales transactions. In this dataset, customers purchase products through physical sales channels and typically pay using cash. This source reflects traditional retail sales conducted in physical locations across different markets, countries, and cities.
+
+The dataset contains information related to products, sales, customers, logistics, and geography. Product data includes product identifiers, product names, categories, departments, prices, and product status. Sales data includes order identifiers, order item identifiers, quantities sold, discounts, sales values, and profit-related measures. Customer data includes customer identifiers and address-related information such as street, city, state, and country. Logistics data includes shipping mode, delivery status, shipping dates, and delivery time indicators. Geographical data includes market, order country, order city, region, and coordinates.
+
+Since the dataset does not provide an explicit store identifier, a logical offline sales location is derived using market, order country, and order city. All order-related identifiers in this dataset were adjusted to ensure uniqueness across different source systems.
+
+Source System 2: DataCoSupplyChainDataset_Online
+
+The second source system represents online sales transactions. In this dataset, customers place orders through digital platforms and complete payments using electronic payment methods. This source reflects e-commerce operations and does not include physical store locations.
+
+The dataset includes product data, sales data, customer data, logistics data, and geographical data similar to the offline dataset. However, instead of physical store information, an online site attribute is used to represent the digital sales channel. Physical address attributes related to stores are not applicable for online sales.
+
+To meet the requirement that the same rows across different source systems must have different identifiers, all order and order item identifiers in this dataset were modified to avoid overlaps with the offline dataset.
+
+Relationship Between Source Systems
+
+Both source systems belong to the same business domain and share many common attributes related to products, customers, sales, and logistics. However, they differ in sales channel, payment method, and channel-specific attributes. The offline dataset represents physical sales with location-based characteristics, while the online dataset represents digital sales without physical store presence.
+
+The separation into two source systems allows meaningful comparison between online and offline sales and supports clean and scalable Data Warehouse design.
+
+Purpose for Data Warehouse Design
+
+These two datasets serve as the foundation for building 3NF and Star schema models in the Data Warehouse. They enable analysis of sales performance, customer behavior, logistics efficiency, and profitability across different sales channels, markets, and product categories.
